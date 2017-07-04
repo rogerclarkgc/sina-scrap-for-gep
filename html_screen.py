@@ -1,16 +1,18 @@
 # coding:utf-8
 import re
+import time
 
 from bs4 import BeautifulSoup
 
 from fetch_page import get_search_page, get_user_page
-
+import basic
+# TODO: 需要统一各个模块之间异常处理之间接口的一致性和通用性
+# TODO: 需要整合各个模块异常消息传递机制，统一写入消息日志
 def get_search_result(page):
     """
     Got the raw html code from json
     :param page: the html returned by fetch_page.get_search_page
-    :return: the html code, a str object, if return None object, it means cannot find
-    result
+    :return: the html code, a str object, if return None object, it means cannot find the html
     """
     view_pattern = r'view\((.*)\)'
     html_pattern = r'"html":"(.*)"}$'
@@ -31,6 +33,11 @@ def get_search_result(page):
     return None
 
 def get_personal_result(page):
+    """
+    Got the raw html code from json where contain in the <script> tag
+    :param page:the html str object, returned by fetch_page.get_user_page
+    :return:the html code, if return None object, it means cannot find the html
+    """
     view_pattern = r'view\((.*)\)'
     html_pattern = r'"html":"(.*)"}$'
     if page == 'PUBLIC_ACCOUNT':
@@ -67,8 +74,11 @@ class Weibo(object):
     """
 
     def __init__(self, search_result=None):
-
-        self.status = 'INITIATE'
+        """
+        initiate the class
+        :param search_result: must be the result of function html_screen.get_search_result
+        """
+        self.status = 'INITIATE'    # the status code of screen process
         self.frame_pattern = 'feed_content wbcon'
         self.nickname_pattern = 'name_txt W_fb'
         self.comment_pattern = 'comment_txt'
@@ -81,6 +91,10 @@ class Weibo(object):
             self.status = 'NO_HTML'
 
     def get_weibo(self):
+        """
+        get all weibo content in a search page
+        :return: a list object, default length is 20, contain 20 weibo content, every content is a dict object
+        """
         frames = self.get_weibo_frame()
         all = []
         if frames != 'NO_FRAME':
@@ -98,6 +112,10 @@ class Weibo(object):
         return all
 
     def get_weibo_frame(self):
+        """
+        get the frame of weibo, because the default search result is 20weibo/page, there are 20 frames
+        :return: a list of frames
+        """
         try:
             frames = self.soup.find_all(class_=self.frame_pattern)
         except AttributeError as e:
@@ -107,6 +125,11 @@ class Weibo(object):
         return frames
 
     def get_nick_name(self, frame):
+        """
+        get the nick_name of user
+        :param frame: must be the element of html_screen.Weibo.get_weibo_frame's return value
+        :return: a str object, which is the nick name of the weibo user
+        """
         try:
             nick_name = frame.find(class_=self.nickname_pattern)['nick-name']
         except (KeyError, TypeError, AttributeError) as e:
@@ -114,6 +137,11 @@ class Weibo(object):
         return nick_name
 
     def get_weibo_comment(self, frame):
+        """
+        get the weibo comment
+        :param frame: must be the element of html_screen.Weibo.get_weibo_frame's return value
+        :return: a str object
+        """
         try:
             comment = frame.find(class_=self.comment_pattern).text
         except AttributeError:
@@ -122,6 +150,11 @@ class Weibo(object):
 
 
     def get_user_url(self, frame):
+        """
+        get the user's main persnal page
+        :param frame: must be the element of html_screen.Weibo.get_weibo_frame's return value
+        :return: a str object, actually it is the url of main page
+        """
         try:
             user_main = frame.find(class_=self.userurl_pattern)['href']
         except (KeyError, TypeError, AttributeError) as e:
@@ -129,6 +162,11 @@ class Weibo(object):
         return user_main
 
     def get_user_id(self, frame):
+        """
+        get thhe user's id
+        :param frame: must be the element of html_screen.Weibo.get_weibo_frame's return value
+        :return: a str object , the unique weibo id for everyuser
+        """
         try:
             user_card = frame.find(class_=self.userurl_pattern)['usercard']
             find = re.search(r'id=(\d{1,11})&', user_card)
@@ -144,8 +182,15 @@ class Weibo(object):
 
 
 class WeiboInfo(object):
+    """
+    screen the weibo's basic info and reconstruct it by dict object
+    """
 
     def __init__(self, search_result=None):
+        """
+        initiate the class
+        :param search_result: must be the result of function html_screen.get_search_result
+        """
         self.infoframe_pattern = 'feed_action_info feed_action_row4'
         self.infolist_patter = 'li'
         self.reg_pattern = r'.*(\d)'
@@ -158,6 +203,10 @@ class WeiboInfo(object):
             self.status = 'NO_HTML'
 
     def get_weibo_info(self):
+        """
+        reconstruct the weibo info, including favorite, forward, comment and praise
+        :return:a list object, default length is 20
+        """
         infoframes = self.get_weibo_infoframe()
         all = []
         if infoframes != 'NO_INFOFRAME':
@@ -177,6 +226,10 @@ class WeiboInfo(object):
         return all
 
     def get_weibo_infoframe(self):
+        """
+        get the weibo's infoframe, the default length is 20
+        :return: a list object of infoframes
+        """
         try:
             weibo_infoframes = self.soup.find_all(class_=self.infoframe_pattern)
         except AttributeError as e:
@@ -186,6 +239,11 @@ class WeiboInfo(object):
         return weibo_infoframes
 
     def get_weibo_infolist(self, frame):
+        """
+        get the weibo's info list
+        :param frame: must be a element of a list object which returned by html_screen.WeiboInfo.get_weibo_infoframe
+        :return: a list object, which contained the info of a weibo
+        """
         try:
             info_list = frame.find_all('li')
         except AttributeError as e:
@@ -227,11 +285,19 @@ class PersonalInfo(object):
                           'location': '所在地：',
                           'gender': '性别：',
                           'birthday': '生日：',
-                          'orientation': '性取向：',
-                          'email': '邮箱：',
-                          'qq': 'QQ：',
-                          'msn': 'MSN：',
+                          'orientation': '性取向：'
                           }
+        self.contactmodel = {'email': '邮箱：',
+                             'qq': 'QQ：',
+                             'MSN': 'MSN：'}
+        self.workmodel = {'company': '公司：'}
+        self.educationmodel = {'university': '大学：',
+                               'highschool': '高中：',
+                               'vocation': '高职：',
+                               'junior': '初中：',
+                               'technical': '中专技校',
+                               'primary': '小学',
+                               'oversea': '海外'}
         if personal_result:
             self.soup = BeautifulSoup(personal_result, 'html.parser')
             self.status = 'OK'
@@ -239,7 +305,25 @@ class PersonalInfo(object):
             self.soup = None
             self.status = 'NO_HTML'
 
+    def get_all_info(self):
+        """
+        reconstruct all info with a dict object
+        :return:a dict object which contain all info, the default value of every info is 'None'
+        """
+        frames = self.get_basic_frame()
+        personal_info = self.get_personal_info(frames)
+        contact_info = self.get_contact_info(frames)
+        work_info = self.get_work_info(frames)
+        education_info = self.get_education_info(frames)
+        all_info = dict(personal_info, **contact_info, **work_info, **education_info)
+        return all_info
+
     def get_basic_frame(self):
+        """
+        get the basic frame of personal info page, normally, therer are 4 frames:
+        '基本信息'\'联系信息'\'工作信息'\'教育信息'
+        :return: a list object, contained all frames in the personal page
+        """
         try:
             frames = self.soup.find_all('h2')
         except AttributeError as e:
@@ -249,6 +333,11 @@ class PersonalInfo(object):
         return frames
 
     def get_personal_info(self, frames):
+        """
+        get the info from ‘个人信息’ frame
+        :param frames: must be a list object, returned by html_screen.PersonalInfo.get_basic_frame()
+        :return: a dict object, a user's personal info
+        """
         info = {'true_name': 'None',
                 'location': 'None',
                 'gender': 'None',
@@ -262,15 +351,17 @@ class PersonalInfo(object):
             for frame in frames:
                 if '基本信息' in frame.text:
                     g = frame.next_elements
+                    break
                 else:
-                    #print('!!!')
-                    continue
+                    g = 'NO_INFO'
+            if g == 'NO_INFO':
+                return info
             node = ''
             while str(node).__contains__('clearfix') is False:
                 node = next(g)
             li = node.find_all('li')
             if len(li) <= 0:
-                return 'NO_PERSONAL_LI'
+                return info
             for tag in li:
                 for item in self.infomodel.items():
                     if item[1] in tag.text:
@@ -279,7 +370,106 @@ class PersonalInfo(object):
             return info
 
         else:
-            return {}
+            return info
+
+    def get_contact_info(self, frames):
+        """
+        get the info from '联系信息' frame
+        :param frames: must be a list object, returned by html_screen.PersonalInfo.get_basic_frame()
+        :return: a dict object, a user's contact info
+        """
+        contact = {'email': 'None',
+                   'qq': 'None',
+                   'MSN':'None'}
+        if frames != 'NO_FRAME':
+            for frame in frames:
+                if '联系信息' in frame.text:
+                    g = frame.next_elements
+                    break
+                else:
+                    g = 'NO_CONTACT'
+            if g == 'NO_CONTACT':
+                return contact
+            node = ''
+            while str(node).__contains__('clearfix') is False:
+                node = next(g)
+            li = node.find_all('li')
+            if len(li) <= 0:
+                return contact
+            for tag in li:
+                for item in self.contactmodel.items():
+                    if item[1] in tag.text:
+                        contact[item[0]] = tag.find('span', class_='pt_detail').text
+            return contact
+        else:
+            return contact
+
+    def get_work_info(self, frames):
+        """
+        get the info from '工作信息' frame
+        :param frames: must be a list object, returned by html_screen.PersonalInfo.get_basic_frame()
+        :return: a dict object, a user's work info
+        """
+        work = {'company': 'None'}
+        if frames != 'NO_FRAME':
+            for frame in frames:
+                if '工作信息' in frame.text:
+                    g = frame.next_elements
+                    break
+                else:
+                    g = 'NO_WORK'
+            if g == 'NO_WORK':
+                return work
+            node = ''
+            while str(node).__contains__('clearfix') is False:
+                node = next(g)
+            li = node.find_all('li')
+            if len(li) <= 0:
+                return work
+            for tag in li:
+                for item in self.workmodel.items():
+                    if item[1] in tag.text:
+                        work[item[0]] = tag.find('a').text
+            return work
+        else:
+            return work
+
+    def get_education_info(self, frames):
+        """
+        get info from '教育信息' frame
+        :param frames: must be a list object, returned by html_screen.PersonalInfo.get_basic_frame()
+        :return: a user's education info
+        """
+        education = {'university': 'None',
+                               'highschool': 'None',
+                               'vocation': 'None',
+                               'junior': 'None',
+                               'technical': 'None',
+                               'primary': 'None',
+                               'oversea': 'None'}
+        if frames != 'NO_FRAME':
+            for frame in frames:
+                if '教育信息' in frame.text:
+                    g = frame.next_elements
+                    break
+                else:
+                    g = 'NO_EDUCATION'
+            if g == 'NO_EDUCATION':
+                return education
+            node = ''
+            while str(node).__contains__('clearfix') is False:
+                node = next(g)
+            li = node.find_all('li')
+            if len(li) <= 0:
+                return education
+            for tag in li:
+                for item in self.educationmodel.items():
+                    if item[1] in tag.text:
+                        education[item[0]] = tag.find('a').text
+            return education
+        else:
+            return education
+
 
 
 if __name__ == '__main__':
@@ -288,6 +478,7 @@ if __name__ == '__main__':
                         end='2017-7-3',
                         page=1)
     sr = get_search_result(r)
+    print('next:', basic.is_next(sr))
     w = Weibo(sr)
     w_info = WeiboInfo(sr)
     info_list = w_info.get_weibo_info()
@@ -295,14 +486,15 @@ if __name__ == '__main__':
     all_weibo = reconstruct_weibo(w_list, info_list, '2017')
     for i in all_weibo:
         print(i)
-    user_page = get_user_page(all_weibo[3]['user_id'])
+    print('waiting...')
+    time.sleep(5)
+    user_page = get_user_page(all_weibo[7]['user_id'])
     user_content = get_personal_result(user_page)
     print(user_content)
 
     Person = PersonalInfo(user_content)
-    frames = Person.get_basic_frame()
-    info = Person.get_personal_info(frames)
-    print(info)
+    all_info = Person.get_all_info()
+    print(all_info)
     #fp = open('user_content.html', 'w', encoding='utf-8')
     #fp.write(user_content)
     #fp.close()

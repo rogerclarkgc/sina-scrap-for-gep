@@ -95,7 +95,6 @@ def check_cookie(cookie_dict, url):
 
 
 if __name__ == '__main__':
-    
     cookies = login_sina(basic.ACOUNT, basic.PASSWD, basic.LOGIN_URL)
     status = add_cookies(cookies, 'roger')
     print(status)
