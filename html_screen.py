@@ -1,6 +1,7 @@
 # coding:utf-8
 import re
 import time
+from base64 import encodebytes
 
 from bs4 import BeautifulSoup
 
@@ -58,13 +59,12 @@ def get_personal_result(page):
                     return m2.group(1).encode('utf-8', 'ignore').decode('utf-8', 'ignore').replace('\\', '')
         return None
 
-def reconstruct_weibo(weibo_list, info_list, weibotime=None):
+def reconstruct_weibo(weibo_list, info_list):
     if len(weibo_list) != len(info_list):
         return []
     else:
         for index in range(0, len(weibo_list)):
             weibo_list[index]['info'] = info_list[index]
-            weibo_list[index]['time'] = weibotime
     return weibo_list
 
 
@@ -79,9 +79,10 @@ class Weibo(object):
         :param search_result: must be the result of function html_screen.get_search_result
         """
         self.status = 'INITIATE'    # the status code of screen process
-        self.frame_pattern = 'feed_content wbcon'
+        self.frame_pattern = 'content clearfix'
         self.nickname_pattern = 'name_txt W_fb'
         self.comment_pattern = 'comment_txt'
+        self.timestamp_pattern = 'W_textb'
         self.userurl_pattern = self.nickname_pattern
         if search_result:
             self.soup = BeautifulSoup(search_result, 'html.parser')
@@ -103,11 +104,18 @@ class Weibo(object):
                 comment = self.get_weibo_comment(frame)
                 user_main = self.get_user_url(frame)
                 user_id = self.get_user_id(frame)
-                weibo = {'nick_name': nick_name,
-                        'comment': comment,
-                        'user_main': user_main,
-                        'user_id': user_id,
-                        'info': None}
+                timestamp = self.get_timestamp(frame)
+                if len(comment) > 5:
+                    stamp = encodebytes((user_id+comment[0:5]).encode())
+                else:
+                    stamp = encodebytes((user_id+comment[0:2]).encode())
+                weibo = {'i_stamp': stamp,
+                         'timestamp': timestamp,
+                         'nick_name': nick_name,
+                         'comment': comment,
+                         'user_main': user_main,
+                         'user_id': user_id,
+                         'info': None}
                 all.append(weibo)
         return all
 
@@ -163,7 +171,7 @@ class Weibo(object):
 
     def get_user_id(self, frame):
         """
-        get thhe user's id
+        get the user's id
         :param frame: must be the element of html_screen.Weibo.get_weibo_frame's return value
         :return: a str object , the unique weibo id for everyuser
         """
@@ -177,6 +185,26 @@ class Weibo(object):
         except (KeyError, TypeError, AttributeError) as e:
             user_id = 'NO_USERID'
         return user_id
+
+    def get_timestamp(self, frame):
+        """
+        get the weibo's time
+        :param frame: must be the element of html_screen.Weibo.get_weibo_frame's return value
+        :return: a str object, the time of weibo
+        """
+        try:
+            timestamp_raw = frame.find('a', class_=self.timestamp_pattern)['date']
+            find = re.search(r'(\d{0,10})000', timestamp_raw)
+            if find:
+                timestamp = find.group(1)
+                timestamp_str = time.strftime('%Y-%m-%d %X', time.gmtime(int(timestamp)))
+            else:
+                timestamp_str = 'NO_TIMESTAMP'
+        except (KeyError, TypeError, AttributeError) as e:
+            timestamp_str = 'NO_TIMESTAMP'
+        return timestamp_str
+
+
 
 
 
@@ -470,12 +498,19 @@ class PersonalInfo(object):
         else:
             return education
 
+    def get_tag_info(self, frames):
+        # TODO: 用于抓取标签信息
+        pass
+
+
+
+
 
 
 if __name__ == '__main__':
     r = get_search_page(keyword='大熊猫',
                         start='2017-1-1',
-                        end='2017-7-3',
+                        end='2017-7-5',
                         page=1)
     sr = get_search_result(r)
     print('next:', basic.is_next(sr))
@@ -483,7 +518,7 @@ if __name__ == '__main__':
     w_info = WeiboInfo(sr)
     info_list = w_info.get_weibo_info()
     w_list = w.get_weibo()
-    all_weibo = reconstruct_weibo(w_list, info_list, '2017')
+    all_weibo = reconstruct_weibo(w_list, info_list)
     for i in all_weibo:
         print(i)
     print('waiting...')
