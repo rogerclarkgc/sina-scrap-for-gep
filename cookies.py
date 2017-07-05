@@ -23,7 +23,7 @@ def add_cookies(cookies, name):
     collection = db.cookies
     # test connection
     if collection.find_one({'test':'ok'}):
-        print('已连接Mongodb!')
+        print('已连接Mongodb!, collection:cookies')
         if len(cookies) <= 0:
             print('没有要插入的cookies')
             status = 'N_COOKIE'
@@ -95,6 +95,7 @@ def check_cookie(cookie_dict, url):
 
 
 if __name__ == '__main__':
+    
     cookies = login_sina(basic.ACOUNT, basic.PASSWD, basic.LOGIN_URL)
     status = add_cookies(cookies, 'roger')
     print(status)
