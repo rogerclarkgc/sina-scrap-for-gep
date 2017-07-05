@@ -1,12 +1,18 @@
 # coding:utf-8
 import re
+import yaml
 
 from fake_useragent import UserAgent
 
-ACOUNT = 'SECRET'
-PASSWD = 'SECRET'
-LOGIN_URL = 'http://weibo.com/'
-SEARCH_URL = 'http://s.weibo.com/'
+with open('spiderconfig.yaml', 'r') as f:
+    conf = f.read()
+cf = yaml.load(conf)
+
+
+ACOUNT = cf.get('roger')['account']
+PASSWD = cf.get('roger')['passwd']
+LOGIN_URL = cf.get('URL')['login']
+SEARCH_URL = cf.get('URL')['search']
 
 def headers():
     """
@@ -58,6 +64,7 @@ def is_next(source):
         return True
     else:
         return False
+
 
 
 
