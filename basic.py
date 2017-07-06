@@ -8,11 +8,17 @@ with open('spiderconfig.yaml', 'r') as f:
     conf = f.read()
 cf = yaml.load(conf)
 
-
-ACOUNT = cf.get('roger')['account']
-PASSWD = cf.get('roger')['passwd']
 LOGIN_URL = cf.get('URL')['login']
 SEARCH_URL = cf.get('URL')['search']
+
+def select_account(owner):
+    try:
+        account = cf.get(owner)['account']
+        passwd = cf.get(owner)['passwd']
+    except (TypeError, KeyError):
+        raise RuntimeError('没有{}的账户信息'.format(owner))
+    return (account, passwd)
+
 
 def headers():
     """
