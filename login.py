@@ -11,10 +11,20 @@ from selenium.webdriver.common.by import By
 import selenium.common.exceptions as CEC
 from bs4 import BeautifulSoup
 
+from basic import select_account
+
 import basic
 
-def login_sina(account, password, url):
+def login_sina(owner, url):
+    """
+    user selenium to login driver and got cookies
+    :param owner: the account's owner, store in 'spiderconfig.yaml'
+    :param url: the login url store in 'spiderconfig.yaml'
+    :return: the cookies
+    """
     # initiate driver
+    account = select_account(owner)[0]
+    password = select_account(owner)[1]
     retry_login = 3
     retry_submit = 3
     print('初始化PhantomJS...\n')
@@ -84,9 +94,8 @@ def login_sina(account, password, url):
 
 if __name__ == '__main__':
     url = basic.LOGIN_URL
-    name_input = basic.ACOUNT
-    passwd_input = basic.PASSWD
-    cookies = login_sina(name_input, passwd_input, url)
+    owner = 'xie'
+    cookies = login_sina(owner, url)
     #pprint(cookies)
     #print(type(cookies), len(cookies))
 
