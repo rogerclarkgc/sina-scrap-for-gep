@@ -73,7 +73,7 @@ def fetch_cookies(owner, name='SUB', date=None):
             except StopIteration:
                 raise RuntimeError('没有找到名字为%s, 拥有者为%s的cookie' % (name, owner))
         r_cookies = {cookie['name']: cookie['value']}
-        print('获取的cookies的时间是%s' % cookie['insert_time'])
+        print('获取的cookies的时间是%s, 拥有者为%s' % (cookie['insert_time'], owner))
     else:
         raise RuntimeError('没有成功连接到数据库，程序终止!')
     client.close()
@@ -95,12 +95,12 @@ def check_cookie(cookie_dict, url):
 
 
 if __name__ == '__main__':
-    
-    cookies = login_sina(basic.ACOUNT, basic.PASSWD, basic.LOGIN_URL)
-    status = add_cookies(cookies, 'roger')
+
+    cookies = login_sina('xie', basic.LOGIN_URL)
+    status = add_cookies(cookies, 'xie')
     print(status)
 
-    f_cookie = fetch_cookies('roger')
+    f_cookie = fetch_cookies('xie')
     print(f_cookie)
     print(check_cookie(f_cookie, basic.SEARCH_URL))
 
