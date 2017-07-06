@@ -41,7 +41,8 @@ def test_cookies(cookies, url):
 
 if __name__ == '__main__':
     print('starting get cookies')
-    cookies = login_sina(basic.ACOUNT, basic.PASSWD, basic.LOGIN_URL)
+    owner = 'xie'
+    cookies = login_sina(owner, basic.LOGIN_URL)
 
     useful_cookies = test_cookies(cookies, basic.LOGIN_URL)
     pprint(useful_cookies)
