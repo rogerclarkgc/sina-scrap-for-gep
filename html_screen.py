@@ -511,7 +511,8 @@ if __name__ == '__main__':
     r = get_search_page(keyword='大熊猫',
                         start='2017-1-1',
                         end='2017-7-5',
-                        page=1)
+                        page=1,
+                        owner='xie')
     sr = get_search_result(r)
     print('next:', basic.is_next(sr))
     w = Weibo(sr)
@@ -523,7 +524,7 @@ if __name__ == '__main__':
         print(i)
     print('waiting...')
     time.sleep(5)
-    user_page = get_user_page(all_weibo[7]['user_id'])
+    user_page = get_user_page(all_weibo[7]['user_id'], owner='xie')
     user_content = get_personal_result(user_page)
     print(user_content)
 
