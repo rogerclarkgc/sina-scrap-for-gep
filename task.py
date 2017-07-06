@@ -18,37 +18,89 @@ import database
 # TODO: 爬取流程实现：1.初步登陆 2.获取搜索关键词 3.执行搜索 4.获取搜索页面 5. 抓取页面数据 6.存储数据到数据库
 # TODO: 爬虫复用流程实现：1.对搜索结果是否有下一页判断 2.设定爬取间断值以防止封号
 
-def first_login():
-    print('开始首次登陆新浪微博，使用的账户为{}'.format(basic.ACOUNT))
-    cookies = login_sina(basic.ACOUNT, basic.PASSWD, basic.LOGIN_URL)
+def first_login(owner='xie'):
+    print('开始首次登陆新浪微博，使用的账户为{}'.format(owner))
+    cookies = login_sina(owner, basic.LOGIN_URL)
     print('开始添加cookies到数据库')
-    status = add_cookies(cookies, 'roger')
+    status = add_cookies(cookies, owner)
     print('插入状态是：{}\n等待5秒...'.format(status))
     time.sleep(5)
-    f_cookies = fetch_cookies('roger')
+    f_cookies = fetch_cookies(owner)
     print('检测cookies可用性')
     res = check_cookie(f_cookies, basic.SEARCH_URL)
     print('检测结果：{}'.format(res))
 
-def search_task(keyword, start, end, cookie_owner='roger', first=False):
+def search_task(keyword, start, end, owner='xie', start_page=1, first=False):
+    error = []
     if first:
         first_login()
     next_page = True
-    start_page = 1
+    start_page = start_page
     while next_page:
+        print('##############开始获取：第{}页搜索结果##############'.format(start_page))
+        print('###等待6秒...###')
+        time.sleep(6)
         search_page = get_search_page(keyword=keyword,
                                       start=start,
                                       end=end,
-                                      page=start_page)
+                                      page=start_page,
+                                      owner=owner)
+        # FIXME:由于未知原因，搜索链接会搜索不到结果，导致search_result为None
         search_result = html_screen.get_search_result(search_page)
+        next_page = basic.is_next(search_result)
+        print('###下一页：{}###'.format(next_page))
+        start_page += 1
         weibo = Weibo(search_result)
         weibo_info = WeiboInfo(search_result)
         weibo_list = weibo.get_weibo()
         weibo_info_list = weibo_info.get_weibo_info()
-        re_weibo = html_screen.reconstruct_weibo(weibo_list, weibo_info_list)
+        print('###开始获取博主个人信息###')
+        for index, weibo in enumerate(weibo_list):
+            # set the time gap of crawling
+            wait = random.randint(8, 15)
+            choice = random.choice(['roger', 'xie'])
+            user_id = weibo['user_id']
+            print('###等待{}秒...###'.format(wait))
+            #print('###comment:{}###\n###user:{}###'.format(weibo['comment'], weibo['nick_name']))
+            time.sleep(wait)
+            print('###选择{}的账户进行登录###'.format(choice))
+            print('###获取的博主id为{}, 这是第{}个微博'.format(user_id, index+1))
+            user_page = get_user_page(user_id, choice)
+            user_content = html_screen.get_personal_result(user_page)
+            person = PersonalInfo(user_content)
+            all_info = person.get_all_info()
+            weibo['personinfo'] = all_info
 
+        full_weibo = html_screen.reconstruct_weibo(weibo_list, weibo_info_list)
+        count = store_task(full_weibo)
+        error.append(count)
+        print('###插入操作，成功：{}，失败：{}###'.format(len(full_weibo)-len(count), len(count)))
+    print('##############结束获取##############')
+    return error
+
+
+def store_task(weibo_list=None):
+    errorlist = []
+    storer = database.DataBase()
+    print('###一共有{}条微博将插入数据库###'.format(len(weibo_list)))
+    count = 0
+    for weibo in weibo_list:
+        error = storer.addin(weibodict=weibo)
+        if len(error) == 0:
+            count += 1
+        else:
+            errorlist.append(error)
+    storer.close()
+    return errorlist
 
 
 
 if __name__ == '__main__':
-    first_login()
+
+    error = search_task(keyword='大熊猫',
+                start='2009-11-01',
+                end='2009-11-30',
+                owner='roger',
+                start_page=12)
+    # 已完成11月抓取
+    print(error)
