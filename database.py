@@ -26,20 +26,28 @@ class DataBase(object):
         if check_mode is True:
             if self.check(weibodict['i_stamp']) is True:
                 print('发现重复数据，不执行插入')
-                return self.status
+                return {}
             else:
                 pass
         else:
             pass
-        message = self.weibocol.insert_one(weibodict)
-        strnow = datetime.now().strftime('%Y-%m-%d %X')
-        if message._WriteResult_acknowledged:
-            print('已插入微博数据到数据库，集合：weibo，插入时间为：{}'.format(strnow))
-            self.status = 'INSERT_OK'
-        else:
-            print('插入操作失败，集合：weibo，插入时间为：{}'.format(strnow))
-            self.status = 'INSERT_FAILURE'
-        return self.status
+        try:
+            message = self.weibocol.insert_one(weibodict)
+            strnow = datetime.now().strftime('%Y-%m-%d %X')
+            if message._WriteResult__acknowledged:
+                print('已插入微博数据到数据库，集合：weibo，插入时间为：{}'.format(strnow))
+                self.status = 'INSERT_OK'
+                return {}
+            else:
+                print('插入操作失败，集合：weibo，插入时间为：{}'.format(strnow))
+                self.status = 'INSERT_FAILURE'
+                return weibodict
+        except (UnicodeEncodeError, UnicodeError, UnicodeDecodeError):
+            print('出现编码问题，跳过插入此条微博到数据库')
+            return weibodict
+
+    def close(self):
+        self.client.close()
 
     def fetch(self, **kwargs):
         pass
@@ -53,3 +61,9 @@ class DataBase(object):
 
     def delete(self, **kwargs):
         pass
+
+if __name__ == '__main__':
+    a = {'a':'a', 'b':'b'}
+    d = DataBase()
+    mes = d.addin(a)
+    d.close()
