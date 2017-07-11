@@ -48,6 +48,13 @@ def search_task(keyword, start, end, owner='xie', start_page=1, first=False):
         # FIXME:由于未知原因，搜索链接会搜索不到结果，导致search_result为None
         search_result = html_screen.get_search_result(search_page)
         next_page = basic.is_next(search_result)
+        # FIXME: didn't work ...○|￣|_
+        if next_page == '':
+            while next_page == '':
+                print('###未出现搜索结果，开始重试搜索###\n###等待15秒###\n')
+                time.sleep(15)
+                search_result = html_screen.get_search_result(search_page)
+                next_page = basic.is_next(search_result)
         print('###下一页：{}###'.format(next_page))
         start_page += 1
         weibo = Weibo(search_result)
@@ -57,7 +64,7 @@ def search_task(keyword, start, end, owner='xie', start_page=1, first=False):
         print('###开始获取博主个人信息###')
         for index, weibo in enumerate(weibo_list):
             # set the time gap of crawling
-            wait = random.randint(8, 15)
+            wait = random.randint(3, 5)
             choice = random.choice(['roger', 'xie'])
             user_id = weibo['user_id']
             print('###等待{}秒...###'.format(wait))
@@ -85,7 +92,7 @@ def store_task(weibo_list=None):
     print('###一共有{}条微博将插入数据库###'.format(len(weibo_list)))
     count = 0
     for weibo in weibo_list:
-        error = storer.addin(weibodict=weibo)
+        error = storer.addin(weibodict=weibo, check_mode=False)
         if len(error) == 0:
             count += 1
         else:
@@ -97,10 +104,11 @@ def store_task(weibo_list=None):
 
 if __name__ == '__main__':
 
+    ow = random.choice(['roger', 'xie'])
     error = search_task(keyword='大熊猫',
-                start='2009-11-01',
-                end='2009-11-30',
-                owner='roger',
-                start_page=12)
-    # 已完成11月抓取
+                start='2010-3-01',
+                end='2010-3-31',
+                owner= ow,
+                start_page=26)
+    # not:
     print(error)
