@@ -13,9 +13,10 @@ from login import login_sina
 
 def add_cookies(cookies, name):
     """
-
+    add cookies in mongodb
     :param cookies: a list object contained cookies
-    :return:the status of insert
+    :param name: the name of cookies' owner
+    :return:the status of insert operation
     """
     # initializing a MongoClient
     client = pymongo.MongoClient()
