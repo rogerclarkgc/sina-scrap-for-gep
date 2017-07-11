@@ -31,6 +31,10 @@ def get_search_result(page):
                 # FIXME: 目前无法确认错误原因，可能是原文中的一些字符导致的问题
                 return m2.group(1).encode('utf-8', 'ignore').decode('unicode-escape', 'ignore').replace('\\', '')
                 #return m2.group(1)
+            else:
+                continue
+        else:
+            continue
     return None
 
 def get_personal_result(page):
