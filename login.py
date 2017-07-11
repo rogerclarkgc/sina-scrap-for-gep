@@ -62,8 +62,8 @@ def login_sina(owner, url):
     while retry_submit > 0:
         try:
             #submit.click()
-            ActionChains(driver).double_click(submit).perform()
-            time.sleep(15)
+            #ActionChains(driver).double_click(submit).perform()
+            time.sleep(5)
             # check the elements in the page, if contains the user's nick name, continue to next steps
             # FIXME: 会出现明明已经成功加载个人主页，但WebDriverWait仍然判断没有成功加载的情况
             WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.CLASS_NAME, 'WB_miniblog')))
