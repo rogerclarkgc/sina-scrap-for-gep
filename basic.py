@@ -65,7 +65,10 @@ def is_next(source):
     :param source: the search result html str object
     :return: boolean object
     """
-    rs = re.search("page next S_txt1 S_line1", source)
+    try:
+        rs = re.search("page next S_txt1 S_line1", source)
+    except TypeError:
+        return ''
     if rs:
         return True
     else:
