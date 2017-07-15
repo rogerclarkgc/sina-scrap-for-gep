@@ -48,11 +48,15 @@ def search_task(keyword, start, end, owner='xie', start_page=1, first=False):
         # FIXME:由于未知原因，搜索链接会搜索不到结果，导致search_result为None
         search_result = html_screen.get_search_result(search_page)
         next_page = basic.is_next(search_result)
-        # FIXME: didn't work ...○|￣|_
         if next_page == '':
             while next_page == '':
-                print('###未出现搜索结果，开始重试搜索###\n###等待15秒###\n')
-                time.sleep(15)
+                print('###未出现搜索结果，开始重试搜索###\n###等待10秒###\n')
+                time.sleep(10)
+                search_page = get_search_page(keyword=keyword,
+                                              start=start,
+                                              end=end,
+                                              page=start_page,
+                                              owner=owner)
                 search_result = html_screen.get_search_result(search_page)
                 next_page = basic.is_next(search_result)
         print('###下一页：{}###'.format(next_page))
@@ -99,16 +103,16 @@ def store_task(weibo_list=None):
             errorlist.append(error)
     storer.close()
     return errorlist
-
+# TODO: 可以加入多进程系统，并发多线程操作
 
 
 if __name__ == '__main__':
 
     ow = random.choice(['roger', 'xie'])
     error = search_task(keyword='大熊猫',
-                start='2010-3-01',
-                end='2010-3-31',
+                start='2010-9-01',
+                end='2010-9-30',
                 owner= ow,
-                start_page=26)
-    # not:
+                start_page=1)
+    # not:9 in finished
     print(error)
