@@ -39,6 +39,8 @@ def get_page(url, login=True, retry=3, owner=None):
                     return page
                 else:
                     # TODO: 需要一个切换owner的方法
+                    #ownerpool = ['roger', 'xie']
+                    #return get_page(owner=)
                     raise RuntimeError('属于用户{}的cookies可能失效'.format(owner))
             else:
                 weibo = session.get(url=url,
