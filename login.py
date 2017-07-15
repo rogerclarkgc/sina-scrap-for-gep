@@ -26,7 +26,7 @@ def login_sina(owner, url):
     account = select_account(owner)[0]
     password = select_account(owner)[1]
     retry_login = 3
-    retry_submit = 3
+    retry_submit = 5
     print('初始化PhantomJS...\n')
     driver = webdriver.Chrome()
     #driver = webdriver.Chrome()
