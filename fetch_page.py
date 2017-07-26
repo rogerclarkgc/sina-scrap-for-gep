@@ -30,9 +30,13 @@ def get_page(url, login=True, retry=3, owner=None):
         try:
             session = requests.Session()
             if login:
-                weibo = session.get(url=url,
-                                    headers=headers(),
-                                    cookies=cookie)
+                print('开始获取页面...')
+                paraset = {'url': url,
+                           'headers': headers(),
+                           'cookies': cookie}
+
+                weibo = basic.timelimit(10, session.get, kwargs=paraset)
+
                 page = weibo.text
                 if basic.is_login(page):
                     print('抓取{}页面成功'.format(url))
@@ -47,13 +51,13 @@ def get_page(url, login=True, retry=3, owner=None):
                                     headers=headers())
                 page = weibo.text
                 return page
-        except (requests.exceptions.ReadTimeout, requests.exceptions.ConnectionError, AttributeError) as e:
+        except (requests.exceptions.ReadTimeout, requests.exceptions.ConnectionError, AttributeError, TimeoutError) as e:
             count+=1
             print('爬取{}出现错误，错误原因是{}\n开始第{}次爬取'.format(url, e, count+1))
             time.sleep(random.randint(5, 15))
 
-        print('爬取{}已到最大重试次数，爬取失败!'.format(url))
-        return 'FAILURE_CRAWLING'
+    print('爬取{}已到最大重试次数，爬取失败!'.format(url))
+    return 'FAILURE_CRAWLING'
 
 def get_search_page(keyword, start, end, page, owner):
     """
