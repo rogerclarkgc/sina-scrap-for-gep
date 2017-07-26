@@ -3,6 +3,7 @@ import time
 import re
 import random
 from datetime import datetime, timedelta, date
+import yaml
 
 import basic
 from login import  login_sina
@@ -17,6 +18,14 @@ import database
 """
 # TODO: 爬取流程实现：1.初步登陆 2.获取搜索关键词 3.执行搜索 4.获取搜索页面 5. 抓取页面数据 6.存储数据到数据库
 # TODO: 爬虫复用流程实现：1.对搜索结果是否有下一页判断 2.设定爬取间断值以防止封号
+
+with open('D:\\work\\python\sina-scrap-for-gep\\spiderconfig.yaml', 'r') as f:
+    conf = f.read()
+cf = yaml.load(conf)
+
+page_gap = cf.get('config')['page_gap']
+person_gap_min = cf.get('config')['person_gap_min']
+person_gap_max = cf.get('config')['person_gap_max']
 
 def first_login(owner='xie'):
     print('开始首次登陆新浪微博，使用的账户为{}'.format(owner))
@@ -39,7 +48,7 @@ def search_task(keyword, start, end, owner='xie', start_page=1, first=False):
     while next_page:
         print('##############开始获取：第{}页搜索结果##############'.format(start_page))
         print('###等待6秒...###')
-        time.sleep(6)
+        time.sleep(page_gap)
         search_page = get_search_page(keyword=keyword,
                                       start=start,
                                       end=end,
@@ -68,8 +77,8 @@ def search_task(keyword, start, end, owner='xie', start_page=1, first=False):
         print('###开始获取博主个人信息###')
         for index, weibo in enumerate(weibo_list):
             # set the time gap of crawling
-            wait = random.randint(3, 5)
-            choice = random.choice(['roger', 'xie'])
+            wait = random.randint(person_gap_min, person_gap_max)
+            choice = random.choice(['roger', 'towa', 'xie'])
             user_id = weibo['user_id']
             print('###等待{}秒...###'.format(wait))
             #print('###comment:{}###\n###user:{}###'.format(weibo['comment'], weibo['nick_name']))
@@ -108,11 +117,11 @@ def store_task(weibo_list=None):
 
 if __name__ == '__main__':
 
-    ow = random.choice(['roger', 'xie'])
+    ow = random.choice(['roger', 'towa', 'xie'])
     error = search_task(keyword='大熊猫',
-                start='2010-9-01',
-                end='2010-9-30',
+                start='2012-6-01',
+                end='2012-6-30',
                 owner= ow,
                 start_page=1)
-    # not:9 in finished
+    # not:5 in finished
     print(error)
