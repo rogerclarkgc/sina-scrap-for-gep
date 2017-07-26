@@ -1,10 +1,11 @@
 # coding:utf-8
 import re
 import yaml
+import threading
 
 from fake_useragent import UserAgent
 
-with open('spiderconfig.yaml', 'r') as f:
+with open('D:\\work\\python\sina-scrap-for-gep\\spiderconfig.yaml', 'r') as f:
     conf = f.read()
 cf = yaml.load(conf)
 
@@ -73,6 +74,40 @@ def is_next(source):
         return True
     else:
         return False
+
+def timelimit(timeout, func, args=(), kwargs={}):
+    """
+    this function will create a thread and stop it until the running time of thread
+    exceed timeout
+    :param timeout:the timeout of a thread
+    :param func:the work you need to do in a thread
+    :param args:the args of func
+    :param kwargs:the keyword args
+    :return:the result of func
+    """
+    class FuncThread(threading.Thread):
+        def __init__(self):
+            threading.Thread.__init__(self)
+            self.result = None
+            self.nodo = False
+
+        def run(self):
+            if self.nodo == False:
+                self.result = func(*args, **kwargs)
+
+        def stop(self):
+            if self.isAlive():
+                self.nodo = True
+
+    it = FuncThread()
+    #it.setDaemon(True)
+    it.start()
+    it.join(timeout)
+    if it.isAlive():
+        it.stop()
+        raise TimeoutError
+    else:
+        return it.result
 
 
 
