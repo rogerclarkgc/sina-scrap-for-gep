@@ -51,7 +51,8 @@ def get_page(url, login=True, retry=3, owner=None):
                                     headers=headers())
                 page = weibo.text
                 return page
-        except (requests.exceptions.ReadTimeout, requests.exceptions.ConnectionError, AttributeError, TimeoutError) as e:
+        except (requests.exceptions.ReadTimeout, requests.exceptions.ConnectionError,
+                AttributeError, TimeoutError, RuntimeError) as e:
             count+=1
             print('爬取{}出现错误，错误原因是{}\n开始第{}次爬取'.format(url, e, count+1))
             time.sleep(random.randint(5, 15))
