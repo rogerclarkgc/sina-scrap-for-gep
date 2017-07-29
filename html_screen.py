@@ -110,9 +110,9 @@ class Weibo(object):
                 user_id = self.get_user_id(frame)
                 timestamp = self.get_timestamp(frame)
                 if len(comment) > 5:
-                    stamp = encodebytes((user_id+comment[0:5]).encode())
+                    stamp = encodebytes((user_id+comment[0:5]).encode(errors='ignore'))
                 else:
-                    stamp = encodebytes((user_id+comment[0:2]).encode())
+                    stamp = encodebytes((user_id+comment[0:2]).encode(errors='ignore'))
                 weibo = {'i_stamp': stamp,
                          'timestamp': timestamp,
                          'nick_name': nick_name,
