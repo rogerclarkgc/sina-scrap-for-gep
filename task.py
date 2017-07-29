@@ -119,9 +119,9 @@ if __name__ == '__main__':
 
     ow = random.choice(['roger', 'towa', 'xie'])
     error = search_task(keyword='大熊猫',
-                start='2012-6-01',
-                end='2012-6-30',
+                start='2017-7-01',
+                end='2017-7-28',
                 owner= ow,
                 start_page=1)
-    # not:5 in finished
+    # not:16 in finished
     print(error)
