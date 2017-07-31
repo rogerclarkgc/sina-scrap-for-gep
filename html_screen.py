@@ -63,12 +63,13 @@ def get_personal_result(page):
                     return m2.group(1).encode('utf-8', 'ignore').decode('utf-8', 'ignore').replace('\\', '')
         return None
 
-def reconstruct_weibo(weibo_list, info_list):
+def reconstruct_weibo(weibo_list, info_list, keyword):
     if len(weibo_list) != len(info_list):
         return []
     else:
         for index in range(0, len(weibo_list)):
             weibo_list[index]['info'] = info_list[index]
+            weibo_list[index]['keyword'] = keyword
     return weibo_list
 
 
