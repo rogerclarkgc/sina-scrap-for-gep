@@ -91,7 +91,7 @@ def search_task(keyword, start, end, owner='xie', start_page=1, first=False):
             all_info = person.get_all_info()
             weibo['personinfo'] = all_info
 
-        full_weibo = html_screen.reconstruct_weibo(weibo_list, weibo_info_list)
+        full_weibo = html_screen.reconstruct_weibo(weibo_list, weibo_info_list, keyword)
         count = store_task(full_weibo)
         error.append(count)
         print('###插入操作，成功：{}，失败：{}###'.format(len(full_weibo)-len(count), len(count)))
@@ -118,9 +118,9 @@ def store_task(weibo_list=None):
 if __name__ == '__main__':
 
     ow = random.choice(['roger', 'towa', 'xie'])
-    error = search_task(keyword='大熊猫',
-                start='2017-7-01',
-                end='2017-7-28',
+    error = search_task(keyword='金丝猴',
+                start='2011-5-01',
+                end='2011-5-31',
                 owner= ow,
                 start_page=1)
     # not:16 in finished
