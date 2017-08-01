@@ -11,6 +11,7 @@ cf = yaml.load(conf)
 
 LOGIN_URL = cf.get('URL')['login']
 SEARCH_URL = cf.get('URL')['search']
+TIMEOUT = cf.get('config')['connect_timeout']
 
 def select_account(owner):
     try:
