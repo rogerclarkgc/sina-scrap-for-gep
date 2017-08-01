@@ -35,7 +35,7 @@ def get_page(url, login=True, retry=3, owner=None):
                            'headers': headers(),
                            'cookies': cookie}
 
-                weibo = basic.timelimit(10, session.get, kwargs=paraset)
+                weibo = basic.timelimit(basic.TIMEOUT, session.get, kwargs=paraset)
 
                 page = weibo.text
                 if basic.is_login(page):
