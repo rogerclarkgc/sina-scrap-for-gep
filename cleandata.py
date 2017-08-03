@@ -23,7 +23,7 @@ def cleancomment(comment=None, punctuation=True):
     pattern = '[\u4e00-\u9fa5]'
     if punctuation:
         pattern = '[\u4e00-\u9fa5,。,，,！,？,：,、]'
-    other = ['网页链接', '秒拍视频']
+    other = ['网页链接', '秒拍视频', '展开全文']
     for i in other:
         if i in comment:
             comment = comment.replace(i, '')
@@ -35,6 +35,23 @@ def cleancomment(comment=None, punctuation=True):
     else:
         clean = "".join(result)
         return clean
+def remove_stop(cutlist=None, stopword=None):
+    """
+
+    :param cutlist:the cut list of an comment
+    :param stopword:the list of stop word
+    :return:
+    """
+    if not stopword:
+        #print('使用自建词典...')
+        stopdic = loadpkl('stop_list.pickle')
+    else:
+        #print('使用用户提供词典...')
+        stopdic = stopword
+    nonstop = [word for word in cutlist if word not in stopdic]
+    return nonstop
+
+
 
 def mergecomment(cursor=None, merge = False, split='\n', punc = True):
     """
@@ -55,6 +72,15 @@ def mergecomment(cursor=None, merge = False, split='\n', punc = True):
     else:
         return result
 
+def wordjoin(cutlist=None, sep=" "):
+    """
+    use sep to link all sentence in cut list
+    :param cutlist: the list of cut result for every sentence
+    :param sep: the character to seperate every word
+    :return:the str object
+    """
+    join = sep.join([sep.join(cut) for cut in cutlist])
+    return join
 
 def writepkl(doc=None, name='data.pickle'):
     """
@@ -84,11 +110,17 @@ if __name__ == '__main__':
     find = col.find({'keyword':'大熊猫'})
     print('starting to merge...')
     res = mergecomment(cursor=find, merge=False, split="", punc = False)
+
     print('start to token...')
     cut_list = [list(jieba.cut(doc, cut_all=False)) for doc in res]
+
+    print('starting to wipe out stop words...')
+    cut_list_nonstop = list(map(remove_stop, cut_list))
+
     print('write result list')
     writepkl(res, name='panda_raw_list.pickle')
     writepkl(cut_list, name='panda_cut_list.pickle')
+    writepkl(cut_list_nonstop, name='panda_cut_nonstop.pickle')
 
 
 
