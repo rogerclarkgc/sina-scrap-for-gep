@@ -12,6 +12,7 @@ cf = yaml.load(conf)
 LOGIN_URL = cf.get('URL')['login']
 SEARCH_URL = cf.get('URL')['search']
 TIMEOUT = cf.get('config')['connect_timeout']
+MONTH_GAP = cf.get('config')['month_gap']
 
 def select_account(owner):
     try:
