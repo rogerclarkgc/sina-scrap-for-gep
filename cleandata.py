@@ -6,8 +6,8 @@ import pickle
 
 from tqdm import tqdm
 import jieba
-import wordcloud
-from matplotlib import pyplot as plt
+
+
 
 from pymongo import MongoClient
 
