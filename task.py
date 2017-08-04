@@ -3,6 +3,7 @@ import time
 import re
 import random
 from datetime import datetime, timedelta, date
+from calendar import monthrange
 import yaml
 
 import basic
@@ -46,9 +47,9 @@ def search_task(keyword, start, end, owner='xie', start_page=1, first=False):
     next_page = True
     start_page = start_page
     while next_page:
+        retrysearch = 3
         print('##############开始获取：第{}页搜索结果##############'.format(start_page))
         print('###等待6秒...###')
-        time.sleep(page_gap)
         search_page = get_search_page(keyword=keyword,
                                       start=start,
                                       end=end,
@@ -59,8 +60,13 @@ def search_task(keyword, start, end, owner='xie', start_page=1, first=False):
         next_page = basic.is_next(search_result)
         if next_page == '':
             while next_page == '':
-                print('###未出现搜索结果，开始重试搜索###\n###等待10秒###\n')
-                time.sleep(10)
+                if retrysearch > 0:
+                    print('###未出现搜索结果，开始重试搜索###\n###等待10秒###\n')
+                    time.sleep(10)
+                else:
+                    print('###3次搜索失败，开始一次长时间静默\n###等待45秒###\n')
+                    time.sleep(45)
+                    retrysearch = 3
                 search_page = get_search_page(keyword=keyword,
                                               start=start,
                                               end=end,
@@ -68,6 +74,7 @@ def search_task(keyword, start, end, owner='xie', start_page=1, first=False):
                                               owner=owner)
                 search_result = html_screen.get_search_result(search_page)
                 next_page = basic.is_next(search_result)
+                retrysearch-=1
         print('###下一页：{}###'.format(next_page))
         start_page += 1
         weibo = Weibo(search_result)
@@ -98,6 +105,31 @@ def search_task(keyword, start, end, owner='xie', start_page=1, first=False):
     print('##############结束获取##############')
     return error
 
+def one_year(year=None, month=(1, 12), keyword=None, ownerlist=None, waite=None):
+    """
+    apply search_task for one year
+    :param year: the int number of year
+    :param month: the month int value
+    :param keyword: the serach key word
+    :param ownerlist: a list object to store cookies'owners
+    :param waite:the waite time for every month
+    """
+    all = range(month[0], month[1]+1)
+    print('###开始获取第{}的搜索结果，开始月份：{}'.format(year, month))
+    for month in all:
+        stop = monthrange(year, month)[1]
+        startday = '{}-{}-01'.format(year, month)
+        stopday = '{}-{}-{}'.format(year, month, stop)
+        ow = random.choice(ownerlist)
+        error_month = search_task(keyword=keyword,
+                                  owner=ow,
+                                  start=startday,
+                                  end=stopday,
+                                  start_page=1)
+        print(error_month)
+        #print('startday:{},\n stopday:{}'.format(startday, stopday))
+        print('###已完成{}年的获取任务，暂停{}秒###'.format(year, waite))
+        time.sleep(waite)
 
 def store_task(weibo_list=None):
     errorlist = []
@@ -117,11 +149,12 @@ def store_task(weibo_list=None):
 
 if __name__ == '__main__':
 
-    ow = random.choice(['roger', 'towa', 'xie'])
-    error = search_task(keyword='金丝猴',
-                start='2014-1-01',
-                end='2014-1-31',
-                owner= ow,
-                start_page=1)
-    # not:6 in finished
-    print(error)
+    #ow = random.choice(['roger', 'towa', 'xie'])
+    ownerlist = ['roger', 'towa', 'xie']
+    one_year(year=2015,
+             month=(1,6),
+             keyword='金丝猴',
+             ownerlist=ownerlist,
+             waite=basic.MONTH_GAP
+             )
+ 
