@@ -128,7 +128,7 @@ def one_year(year=None, month=(1, 12), keyword=None, ownerlist=None, waite=None)
                                   start_page=1)
         print(error_month)
         #print('startday:{},\n stopday:{}'.format(startday, stopday))
-        print('###已完成{}年的获取任务，暂停{}秒###'.format(year, waite))
+        print('###已完成{}年{}月的获取任务，暂停{}秒###'.format(year,month, waite))
         time.sleep(waite)
 
 def store_task(weibo_list=None):
@@ -151,8 +151,8 @@ if __name__ == '__main__':
 
     #ow = random.choice(['roger', 'towa', 'xie'])
     ownerlist = ['roger', 'towa', 'xie']
-    one_year(year=2015,
-             month=(1,6),
+    one_year(year=2017,
+             month=(7,7),
              keyword='金丝猴',
              ownerlist=ownerlist,
              waite=basic.MONTH_GAP
