@@ -38,7 +38,7 @@ def login_sina(owner, url):
             # 由于网络问题，driver.get()花费时间较长
             # FIXME: 可能由于weibo包含过多动态加载内容，几乎所有的提交操作反应都很慢
             driver.get(url)
-            WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.ID, 'loginname')))
+            WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.ID, 'loginname')))
             break
         except CEC.TimeoutException:
             retry_login -= 1
