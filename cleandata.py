@@ -53,11 +53,11 @@ def remove_stop(cutlist=None, stopword=None):
 
 
 
-def mergecomment(cursor=None, merge = False, split='\n', punc = True):
+def mergecomment(cursor=None, merge = False, split='\n', punc = False):
     """
     merge all comment in one string object
     :param cursor: pymongo cursor object
-    :param all: merge all doc in one string object
+    :param merge: merge all doc in one string object
     :param split: the split character of every comment
     :param punc: if true, will not exclude punctuations in comments
     :return: the string object or list object
@@ -102,6 +102,24 @@ def loadpkl(name='data.pickle'):
         data = pickle.load(f)
     return data
 
+def dataloader(keyword, timegap=None):
+    """
+    find raw data from mongodb
+    :param keyword: the keyword of comment
+    :param timegap: time gap of comment, ('2017-01-01', '2017-01-31')
+    :return: the cursor of database
+    """
+    db = MongoClient()
+    col = db.sina.weibo
+    if not timegap:
+        query = {'keyword':keyword}
+        find = col.find(query)
+    else:
+        query = {'keyword': keyword,
+                 'timestamp': {'$gte': timegap[0],
+                               '$lte': timegap[1]}}
+        find = col.find(query)
+    return find
 
 if __name__ == '__main__':
 
