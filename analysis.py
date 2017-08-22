@@ -3,6 +3,8 @@ import nltk
 import wordcloud
 import jieba
 from matplotlib import pyplot as plt
+from gensim.models import Word2Vec
+from gensim.models.word2vec import LineSentence
 
 import cleandata
 
@@ -20,7 +22,7 @@ class WordFreq(object):
 
     def reconstructdata(self):
         """
-        reconstruct data
+        reconstruct data for different word frequency analysis
         :return: a dict object contained data
         """
         if self.type is 'wordcloud':
@@ -73,13 +75,38 @@ class WordFreq(object):
                    'most_common': most_common}
         return summary
 
+class WordVector:
+    """
+
+    """
+    # TODO: 这个类用于生成语料的词向量并进行相似性统计分析
+    def __init__(self, filename=None):
+        import logging
+        import multiprocessing
+        logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s')
+        logging.root.setLevel(level=logging.INFO)
+        self.multi = multiprocessing.cpu_count()
+        self.corpus = LineSentence(filename)
+
+    def train(self, save=True, savename=None):
+        model = Word2Vec(sentences=self.corpus, size=400, workers=self.multi)
+        if save:
+            model.wv.save_word2vec_format(savename)
+        return model
+
+
+
+
 if __name__ == '__main__':
 
-    find = cleandata.dataloader('金丝猴', ('2016-01-01', '2016-03-31'))
-    res = cleandata.mergecomment(cursor=find, merge=False, punc=False)
+    #find = cleandata.dataloader('金丝猴', ('2016-01-01', '2016-03-31'))
+    #res = cleandata.mergecomment(cursor=find, merge=False, punc=False)
 
-    wf = WordFreq(res, 'freqdist')
-    summary = wf.freqdist()
-    print(summary)
+    #wf = WordFreq(res, 'freqdist')
+    #summary = wf.freqdist()
+    #print(summary)
+    wv = WordVector('panda_cut_string.txt')
+    model = wv.train(save=True, savename='panda_nonstop_model.vector')
+    print(model.wv.most_similar('大熊猫'))
 
 
