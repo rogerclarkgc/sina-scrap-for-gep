@@ -102,6 +102,14 @@ def loadpkl(name='data.pickle'):
         data = pickle.load(f)
     return data
 
+def writetxt(name='corpus.txt', doc=None):
+    if isinstance(doc, str) is False:
+        raise RuntimeError('doc need be a str object')
+    else:
+        with open(name, 'r', encoding='utf-8', errors='ignore') as f:
+            f.write(doc)
+            return 1
+
 def dataloader(keyword, timegap=None):
     """
     find raw data from mongodb
