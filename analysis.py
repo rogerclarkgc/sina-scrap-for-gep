@@ -177,6 +177,8 @@ class SenSimi(object):
         raw = [[word for word in sentence if freq[word] > 1] for sentence in self.cg]
         return raw
 
+
+
     def bowcorpus(self, raw=None):
         """
         return the list of bag of words and buld dictionary
@@ -190,8 +192,19 @@ class SenSimi(object):
         self.bowlist = bowlist
         return bowlist
 
+    def topicnum(self):
+        """
+        文档矩阵维度太大，需要舍弃那些tfidf太小的值来初步降低维度，再进行主题数目分析
+        :return:
+        """
+        pass
+
     def tfidfmodel(self, bowlist=None, save=False, savename=None):
         """
+        tf-idf是tf和idf两个参数的乘积，tf（词频）表示某个词在一句话中出现的频率，如果一个词在
+        一句话中多次出现，那么tf会是一个较大值
+        idf（倒文档率）表示包含某个词的语句在整个语料库中所占比率倒数之对数值，如果一个词广泛出现在语料中，那么它的idf值会较小
+        如果一个词在一句话中多次出现，但在整个语料中出现的不多，那么它一定对这句话很重要，所以它的tf-idf会较大
         build a tfidfmodel
         :param bowlist: the list of bag of words
         :param save: save the model
@@ -289,6 +302,31 @@ class SenSimi(object):
 
         return simi_list
 
+    def tfidfcurve(self):
+
+        tfidfmodel = self.tfidfmodel(self.bowlist)
+        corpus_tfidf = tfidfmodel[self.bowlist]
+        #return corpus_tfidf
+        try:
+            corpus_tfidf_l = list(corpus_tfidf.__iter__())
+            corpus_tfidf_v = [word[1] for sen in corpus_tfidf_l for word in sen]
+            corpus_tfidf_v.sort()
+        except MemoryError:
+            raise RuntimeError('array is too big to operate.')
+        #return corpus_tfidf_l
+        y = np.array(corpus_tfidf_v)
+        x = np.arange(len(y))
+        fig, (ax1, ax2) = plt.subplots(1, 2)
+        ax1.hist(y, bins=50, normed=True)
+        ax1.set_xlabel('TF-IDF')
+        ax1.set_ylabel('Probability Density')
+        ax2.plot(x, y)
+        ax2.set_xlabel('Words')
+        ax2.set_ylabel('TF-IDF')
+        fig.tight_layout()
+        plt.show()
+
+
     def simihist(self, prob=True, bins=100, simi=None):
 
         num_bins = bins
@@ -341,11 +379,27 @@ if __name__ == '__main__':
     si = SenSimi(panda_g)
     panda_raw = si.reconstructdata()
     bowlist = si.bowcorpus(panda_raw)
+    temp = si.tfidfcurve()
+    print(type(temp))
+    tfidf = si.tfidfmodel(bowlist=si.bowlist, save=True, savename='panda_tfidf.model')
+    panda_tfidf = tfidf[si.bowlist]
+    cleandata.writepkl(panda_tfidf, 'panda_tfidf.matrix')
 
-    good = ['可爱', '萌', '喜欢', '国宝', '神奇']
-    res = si.indexcompare(query=good, model='lsi')
+    # good = ['可爱', '萌', '喜欢', '国宝', '神奇']
+    good = cleandata.loadpkl('moe_uni_t.pickle')
+    bad = cleandata.loadpkl('bad_uni_t.pickle')
+    """
+    此处选择主题数目将直接影响simi表的结果，当主题数目很多时，相似性将很低
+    当主题数目很少，相似性显著上升
+    
+    由于使用svd分解，需要找到一个合适的主题数目，该主题下还原得到的文档矩阵希望能和原来的矩阵差距较小
+    有什么方法能够评价两个矩阵之间的相似程度？
+    """
+
+    res = si.indexcompare(query=good, model='lsi', topic=50)
     cleandata.writepkl(res, 'panda_simi824.pickle')
     si.simihist(simi=res)
+
     #print(max(res))
     #print(len(res))
 
