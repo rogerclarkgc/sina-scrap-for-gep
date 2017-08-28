@@ -134,6 +134,7 @@ class WordVector(object):
             raise RuntimeError('use reconstructdata first to load corpus')
         model = Word2Vec(sentences=self.corpus, size=400, workers=self.multi)
         if save:
+            print('输出词向量模型到文件：{}'.format(savename))
             model.wv.save_word2vec_format(savename)
         return model
 
@@ -192,12 +193,37 @@ class SenSimi(object):
         self.bowlist = bowlist
         return bowlist
 
-    def topicnum(self):
+    def topicnum(self, n=None):
         """
-        文档矩阵维度太大，需要舍弃那些tfidf太小的值来初步降低维度，再进行主题数目分析
+        文档矩阵维度太大，需要舍弃那些tfidf太小的值来初步降低维度(特征数目），再进行主题数目分析
+        也许需要降低文档数量，采用抽样法对小样本进行测试
         :return:
         """
-        pass
+        tfidfmodel = self.tfidfmodel(self.bowlist)
+        corpus_tfidf = tfidfmodel[self.bowlist]
+        try:
+            corpus_tfidf_l = list(corpus_tfidf.__iter__())
+        except MemoryError:
+            raise RuntimeError('array is too big to operate.')
+        print('using systematic sampling..')
+        k = int(corpus_tfidf_l.__len__() / n)
+        i = 0
+        start = np.random.choice(n)
+        sampler = []
+        while sampler.__len__() < n:
+            try:
+                sampler.append(corpus_tfidf_l[start + i*k])
+            except IndexError:
+                sampler.append(corpus_tfidf_l[-1])
+            i += 1
+        sampler_tfidf_all = [word[1] for sen in sampler for word in sen]
+        print('the length of sampler list :{}'.format(len(sampler)))
+        fig = plt.hist(sampler_tfidf_all, 50, normed=True)
+        plt.xlabel("TF-IDF")
+        plt.ylabel("Probability Density")
+        plt.show()
+
+
 
     def tfidfmodel(self, bowlist=None, save=False, savename=None):
         """
@@ -214,6 +240,7 @@ class SenSimi(object):
         print('using Tfidfmodel')
         tfidf = tfidfmodel.TfidfModel(bowlist)
         if save:
+            print('输出TF-IDF模型到文件：{}'.format(savename))
             tfidf.save(savename)
         return tfidf
     def lsimodel(self, corpus_t=None, topic=200, save=False, savename=None):
@@ -226,6 +253,7 @@ class SenSimi(object):
         print('using Lsimodel...')
         lsimodel = LsiModel(corpus=corpus_t, id2word=self.word_dict, num_topics=topic)
         if save:
+            print('输出lsi模型到文件：{}'.format(savename))
             lsimodel.save(savename)
         return lsimodel
 
@@ -241,6 +269,7 @@ class SenSimi(object):
         print('using Ldamodel...')
         ldamodel = LdaModel(corpus=corpus_t, id2word=self.word_dict, num_topics=topic)
         if save:
+            print('输出lda模型到文件：{}'.format(savename))
             ldamodel.save(savename)
         return ldamodel
 
@@ -256,6 +285,7 @@ class SenSimi(object):
         print('using Random Projections model...')
         rpmodel =RpModel(corpus=corpus_t, id2word=self.word_dict, num_topics=topic)
         if save:
+            print('输出rpm模型到文件：{}'.format(savename))
             rpmodel.save(savename)
         return rpmodel
 
@@ -270,6 +300,7 @@ class SenSimi(object):
         print('using Hierarchical Dirichlet Process model...')
         hdpmodel = HdpModel(corpus=corpus_t, id2word=self.word_dict)
         if save:
+            print('输出hdp模型到文件：{}'.format(savename))
             hdpmodel.save(savename)
         return hdpmodel
     def indexcompare(self, query=None, model=None, topic=200):
@@ -379,8 +410,8 @@ if __name__ == '__main__':
     si = SenSimi(panda_g)
     panda_raw = si.reconstructdata()
     bowlist = si.bowcorpus(panda_raw)
-    temp = si.tfidfcurve()
-    print(type(temp))
+    si.topicnum(600)
+    si.tfidfcurve()
     tfidf = si.tfidfmodel(bowlist=si.bowlist, save=True, savename='panda_tfidf.model')
     panda_tfidf = tfidf[si.bowlist]
     cleandata.writepkl(panda_tfidf, 'panda_tfidf.matrix')
@@ -396,7 +427,7 @@ if __name__ == '__main__':
     有什么方法能够评价两个矩阵之间的相似程度？
     """
 
-    res = si.indexcompare(query=good, model='lsi', topic=50)
+    res = si.indexcompare(query=good, model='rp', topic=50)
     cleandata.writepkl(res, 'panda_simi824.pickle')
     si.simihist(simi=res)
 
