@@ -5,7 +5,7 @@ import threading
 
 from fake_useragent import UserAgent
 
-with open('D:\\work\\python\sina-scrap-for-gep\\spiderconfig.yaml', 'r') as f:
+with open('E:\\python\\login_sina\\spiderconfig.yaml', 'r') as f:
     conf = f.read()
 cf = yaml.load(conf)
 

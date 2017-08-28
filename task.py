@@ -20,7 +20,7 @@ import database
 # TODO: 爬取流程实现：1.初步登陆 2.获取搜索关键词 3.执行搜索 4.获取搜索页面 5. 抓取页面数据 6.存储数据到数据库
 # TODO: 爬虫复用流程实现：1.对搜索结果是否有下一页判断 2.设定爬取间断值以防止封号
 
-with open('D:\\work\\python\sina-scrap-for-gep\\spiderconfig.yaml', 'r') as f:
+with open('E:\\python\\login_sina\\spiderconfig.yaml', 'r') as f:
     conf = f.read()
 cf = yaml.load(conf)
 
@@ -152,7 +152,7 @@ if __name__ == '__main__':
     #ow = random.choice(['roger', 'towa', 'xie'])
     ownerlist = ['roger', 'towa', 'xie']
     one_year(year=2017,
-             month=(7,7),
+             month=(8,8),
              keyword='金丝猴',
              ownerlist=ownerlist,
              waite=basic.MONTH_GAP
