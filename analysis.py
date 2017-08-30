@@ -193,11 +193,13 @@ class SenSimi(object):
         self.bowlist = bowlist
         return bowlist
 
-    def topicnum(self, n=None):
+    def topicnum(self, sample_num=None, feature_value=None, svd_step=10):
         """
-        文档矩阵维度太大，需要舍弃那些tfidf太小的值来初步降低维度(特征数目），再进行主题数目分析
-        也许需要降低文档数量，采用抽样法对小样本进行测试
-        :return:
+        using svd to analysis howmany features is suitable for lsi model
+        :param sample_num:using systematic sampling to generate a test sample
+        :param feature_value:cut of the feature if feature value is to0 small
+        :param svd_step:the step of svd process
+        :return:None
         """
         tfidfmodel = self.tfidfmodel(self.bowlist)
         corpus_tfidf = tfidfmodel[self.bowlist]
@@ -206,22 +208,78 @@ class SenSimi(object):
         except MemoryError:
             raise RuntimeError('array is too big to operate.')
         print('using systematic sampling..')
-        k = int(corpus_tfidf_l.__len__() / n)
+        k = int(corpus_tfidf_l.__len__() / sample_num)
         i = 0
-        start = np.random.choice(n)
+        start = np.random.choice(sample_num)
         sampler = []
-        while sampler.__len__() < n:
+        while sampler.__len__() < sample_num:
             try:
                 sampler.append(corpus_tfidf_l[start + i*k])
             except IndexError:
+                print('*******EXCEPTION CAUGHT:out of index bounds, using the last elements replace*******')
                 sampler.append(corpus_tfidf_l[-1])
             i += 1
+
         sampler_tfidf_all = [word[1] for sen in sampler for word in sen]
         print('the length of sampler list :{}'.format(len(sampler)))
         fig = plt.hist(sampler_tfidf_all, 50, normed=True)
         plt.xlabel("TF-IDF")
         plt.ylabel("Probability Density")
         plt.show()
+        print('starting to rebuild sampler doc-TFIDF matrix...')
+        #return sampler
+        nrow = len(sampler)
+        ncol = max([max(sen) for sen in corpus_tfidf_l])[0]
+        sampler_tfidf_matrix = np.zeros((nrow, ncol))
+        for index, row in enumerate(sampler):
+            col_num = [word[0] for word in row]
+            row_tfidf = [word[1] for word in row]
+            sampler_tfidf_matrix[index, col_num] = row_tfidf
+
+        print('starting to remove useless feature...')
+        sampler_colmean = np.max(sampler_tfidf_matrix, axis=0)
+        sampler_colmean = np.asarray(sampler_colmean).reshape((ncol, ))
+        #return sampler_colmean
+        sampler_index = np.arange(len(sampler_colmean))
+        sampler_all = zip(sampler_index, sampler_colmean)
+        selected = [s[0] for s in sampler_all if s[1] > feature_value]
+
+
+        print('starting svd test...')
+        sampler_tfidf_matrix = np.matrix(sampler_tfidf_matrix[:, selected])
+        print('shape of sample:{}'.format(sampler_tfidf_matrix.shape))
+        u, s, v = np.linalg.svd(sampler_tfidf_matrix, full_matrices=True)
+        S = np.matrix(np.zeros((nrow, len(selected))))
+        S[:len(s), :len(s)] = np.diag(s)
+        step_svd = np.arange(10, len(s), svd_step)
+        print('the num of S:{}\nthe step svd:{}'.format(len(s), step_svd))
+        step_sd = []
+        step_mean = []
+        step_dis = []
+        for svd in step_svd:
+            print('rebuild : {}'.format(svd))
+            rebuid_tfidf = u[:, :svd] * S[:svd, :] * v
+            step_sd.append(np.std(rebuid_tfidf))
+            step_mean.append(np.mean(rebuid_tfidf))
+            dis = np.sqrt(np.sum(np.power(rebuid_tfidf - sampler_tfidf_matrix, 2)))
+            step_dis.append(dis)
+        print(step_sd, step_mean, step_dis)
+
+        print('producing plot...')
+        fig, (ax1, ax2, ax3) = plt.subplots(1, 3)
+        ax1.plot(step_svd, step_mean)
+        ax1.set_xlabel('num of singular value')
+        ax2.set_ylabel('mean of matrix')
+        ax2.plot(step_svd, step_sd)
+        ax2.set_xlabel('num of singular value')
+        ax2.set_ylabel('sd of matrix')
+        ax3.plot(step_svd, step_dis)
+        ax3.set_xlabel('num of singular value')
+        ax3.set_ylabel('dis of matrix')
+        fig.tight_layout()
+        plt.show()
+
+
 
 
 
@@ -410,7 +468,9 @@ if __name__ == '__main__':
     si = SenSimi(panda_g)
     panda_raw = si.reconstructdata()
     bowlist = si.bowcorpus(panda_raw)
-    si.topicnum(600)
+    mean = si.topicnum(4000, 0.6, 10)
+    cleandata.writepkl(mean, 'mean_test.pickle')
+    #print(sampler_tfidf_matrix[1])
     si.tfidfcurve()
     tfidf = si.tfidfmodel(bowlist=si.bowlist, save=True, savename='panda_tfidf.model')
     panda_tfidf = tfidf[si.bowlist]
@@ -427,7 +487,7 @@ if __name__ == '__main__':
     有什么方法能够评价两个矩阵之间的相似程度？
     """
 
-    res = si.indexcompare(query=good, model='rp', topic=50)
+    res = si.indexcompare(query=bad, model='lsi', topic=50)
     cleandata.writepkl(res, 'panda_simi824.pickle')
     si.simihist(simi=res)
 
